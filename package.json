@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js "
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "color": "^4.2.3",
-    "inquirer": "^9.1.4"
+    "colors": "^1.4.0",
+    "inquirer": "^8.1.2"
   }
 }
