@@ -1,11 +1,23 @@
+const fs = require('fs');
+
 const axios = require('axios');
 
 class Searches {
 
-  history = ["Mexico city", "Madrid", "Ontario"]
+  history = [];
+  dbPath = './db/database.json';
 
   constructor() {
-    // TODO: 
+    this.readDB();
+  }
+
+  get historyCapitalize() {
+    return this.history.map(place => {
+      let words = place.split(' ');
+      words = words.map(word => word[0].toUpperCase() + word.substring(1));
+
+      return words.join(' ');
+    })
   }
 
   get paramsMapBox() {
@@ -16,6 +28,12 @@ class Searches {
     }
   } 
 
+  get paramsWeather() {
+    return {
+      appid: process.env.OPENWEATHERKEY,
+      units: 'metric'
+    }
+  }
   async city(place = '') {
     // HTTP request
     try {
@@ -39,21 +57,53 @@ class Searches {
 
   async cityWeather (lat, lon) {
     try {
-      const weather = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.OPENWEATHERKEY}&units=metric`);
 
-      const {temp, temp_min, temp_max,  } = weather.data.main;
+      const instance = axios.create({
+        baseURL: 'https://api.openweathermap.org/data/2.5/weather?',
+        params: {...this.paramsWeather, lat, lon}
+      })
+
+      const resp = await instance.get();
+
+      const { main, weather } = resp.data;
 
       return {
-        temp,
-        temp_min,
-        temp_min,
-        temp_max,
-        description: weather.data.weather[0].description
+        temp: main.temp,
+        temp_min: main.temp_min,
+        temp_max: main.temp_max,
+        description: weather[0].description
       }
 
     } catch (error) {
       console.log(error);
     }
+  }
+
+  addToHistory(place = '') {
+    if(this.history.includes(place.toLowerCase())) {
+      return
+    }
+    this.history = this.history.splice(0, 4)
+    this.history.unshift(place.toLowerCase());
+
+    this.writeInDB();
+
+  }
+
+  writeInDB() {
+    const payload = {
+      history: this.history
+    }
+    fs.writeFileSync(this.dbPath, JSON.stringify(payload))
+  }
+
+  readDB() {
+    if(!fs.existsSync(this.dbPath)) return;
+
+    const info = fs.readFileSync(this.dbPath, {encoding: 'utf-8'});
+    const data = JSON.parse(info);
+
+    this.history = data.history;
   }
 
 }
